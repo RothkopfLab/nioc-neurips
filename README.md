@@ -2,6 +2,27 @@
 
 This repository contains code for the ICML submission "Probabilistic inverse optimal control with local linearization for partially-observable systems" (Anonymous Authors).
 
+## Install requirements
+
+The easiest way is to create a fresh virtual environment and install everything from `requirements.txt`.
+
+```bash
+python -m venv env
+source env/bin/activate
+python -m pip install -r requirements.txt
+```
+
+## Running the example script
+
+
+```bash
+python reaching_example.py
+```
+
+runs an example that simulates trajectories from the reaching task, estimates the parameters using our method and the baseline, and plots simulated trajectories using the parameter estimates.
+
+
+## Package `nioc`
 The package `nioc` contains implementations of 
 
 - Control algorithms `nioc.control`
