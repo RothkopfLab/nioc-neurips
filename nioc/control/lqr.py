@@ -77,8 +77,8 @@ def backward(spec: LQRSpec, eps: float = 1e-8) -> Gains:
         return (S, s), (L, l, Ht)
 
     _, (L, l, D) = lax.scan(loop, (spec.Qf, spec.qf),
-                         (spec.Q, spec.q, spec.P, spec.R, spec.r, spec.A, spec.B),
-                         reverse=True)
+                            (spec.Q, spec.q, spec.P, spec.R, spec.r, spec.A, spec.B),
+                            reverse=True)
 
     return Gains(L=L, l=l, D=D)
 

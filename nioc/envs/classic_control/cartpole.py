@@ -68,24 +68,10 @@ class CartPole(Env):
         return state + params.obs_noise * jnp.array([1., 1., 0.1, 0.1]) * noise
 
     def _cost(self, state, action, params):
-        # Code 8.4
-        # return (state[0] - 1.) ** 2 + (state[2] - jnp.pi) ** 2 + 1e-4 * jnp.sum(action ** 2)
-        #
-        # return jnp.sum((state - jnp.array([1., 0., jnp.pi, 0.])) ** 2) + params.action_cost * jnp.sum(action ** 2)
-        # pos_cost = (state[0] - 1.) ** 2
-        # vel_cost = state[1] ** 2
-        # ang_cost = (angle_normalize(state[2]) - angle_normalize(jnp.pi)) ** 2
-        # ang_vel_cost = state[3] ** 2
-
         return params.action_cost * jnp.sum(action ** 2)
 
     def _final_cost(self, state, params):
-        # pos_cost = (state[0] - 1.) ** 2
-        # vel_cost = state[1] ** 2
-        # ang_cost = (angle_normalize(state[2]) - angle_normalize(jnp.pi)) ** 2
-        # ang_vel_cost = state[3] ** 2
         return state @ jnp.diag(jnp.array([1., 1., params.velocity_cost, params.velocity_cost])) @ state.T
 
     def _reset(self, noise, params):
-        # Code 8.5
         return jnp.array([-1., 0., 0., 0.])

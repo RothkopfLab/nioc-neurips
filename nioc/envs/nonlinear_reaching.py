@@ -6,7 +6,7 @@ from nioc.envs.base import Env
 
 
 class NonlinearReachingParams(NamedTuple):
-    action_cost: float = 1e-3
+    action_cost: float = 1e-4
     velocity_cost: float = 1e-2
     motor_noise: float = 1e-1
     obs_noise: float = 1.
@@ -117,6 +117,6 @@ class NonlinearReaching(Env):
 
     @staticmethod
     def get_params_bounds():
-        lo = NonlinearReachingParams(action_cost=1e-3, velocity_cost=1e-3, motor_noise=1e-2, obs_noise=1e-1)
+        lo = NonlinearReachingParams(action_cost=1e-5, velocity_cost=1e-3, motor_noise=1e-2, obs_noise=1e-1)
         hi = NonlinearReachingParams(action_cost=1e-1, velocity_cost=1e-1, motor_noise=1., obs_noise=100.)
         return lo, hi

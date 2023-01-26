@@ -4,6 +4,7 @@ import jax.numpy as jnp
 from nioc.envs.base import Env
 from nioc.envs.env_utils import angle_normalize
 
+
 class PendulumParams(NamedTuple):
     action_cost: float = 1e-3
     velocity_cost: float = 1e-2

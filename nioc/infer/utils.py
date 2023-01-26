@@ -25,6 +25,7 @@ def draw_random_uniform_in_log_space(key, lo, hi, params_type):
     return jax.tree_map(lambda key, lo, hi: random.uniform(key, minval=jnp.log10(lo), maxval=jnp.log10(hi)),
                         params_type(*random.split(key, len(params_type._fields))), lo, hi)
 
+
 def compute_mle(xs, ioc, key, restarts, bounds, optim="L-BFGS-B",
                 params=None,
                 likelihood_params=None):

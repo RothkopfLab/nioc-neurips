@@ -1,16 +1,21 @@
 # Non-linear inverse optimal control (nioc)
 
-Contains implementations of 
+This repository contains code for the ICML submission "Probabilistic inverse optimal control with local linearization for partially-observable systems" (Anonymous Authors).
+
+The package `nioc` contains implementations of 
 
 - Control algorithms `nioc.control`
+    - `lqr` linear quadratic regulator
+    - `lqg` linear quadratic Gaussian (LQG) control
+    - `glqg` generalized LQG with signal-dependent noise (Todorov, 2005)
     - `ilqr` iterative LQR (Li & Todorov, 2004) 
-    - `gilqr` with `lqr=glqr` generalized iterative LQR (Li & Todorov, 2005) with signal-dependent noise, equation numbers in code comments are from Li's PhD
+    - `gilqr` generalized iterative LQR with signal-dependent noise, also known as iLQG (Li & Todorov, 2005) , equation numbers in code comments are from Li's PhD
       thesis (2006)
 
 - Environments `nioc.envs`
     - nonlinear environments, for which our new inference methods have been tested
       - `nonlinear_reaching.py` non-linear reaching task (Li & Todorov, 2007)
-      - 'navigation.py' navigation task
+      - `navigation.py` navigation task
       - `classic_control.pendulum.py` classic inverted pendulum control problem
       - `classic_control.cartpole.py` classic cartpole control problem
 

@@ -47,9 +47,6 @@ def make_approx(p: Env, params: Any) -> Callable:
 
 
 def solve(spec: GLQGSpec, Sigma0: jnp.ndarray, eps: float = 1e-8) -> Tuple[jnp.ndarray, Gains]:
-    # TODO: right now, this does not do the iterative procedure by Todorov (2005)
-    #  and instead only computes the Kalman filter and the gLQR control gains
-    #  but this should be way more efficient in the inverse optimal control procedure
     K = kf.forward(kf.KFSpec(A=spec.A, H=spec.H, V=spec.V, W=spec.W), Sigma0=Sigma0)
     control_gains = glqr.backward(glqr.GLQRSpec(Q=spec.Q, q=spec.q, Qf=spec.Qf, qf=spec.qf,
                                                 P=spec.P, R=spec.R, r=spec.r,

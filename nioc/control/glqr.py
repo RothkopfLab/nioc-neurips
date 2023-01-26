@@ -23,7 +23,6 @@ class GLQRSpec(NamedTuple):
     V: jnp.ndarray
 
 
-
 def make_approx(p: Env, params: Any) -> Callable:
     lqr_approx = lqr.make_approx(p, params)
 
@@ -36,7 +35,7 @@ def make_approx(p: Env, params: Any) -> Callable:
         Cx, Cu = jacobian(jacobian(p._dynamics, argnums=2),
                           argnums=(0, 1))(x, u, jnp.zeros(p.state_noise_shape), params)
 
-        return V, Cx, Cu # .transpose((0, 2, 1)), Cu.transpose((0, 2, 1))
+        return V, Cx, Cu
 
     def approx(X, U):
         assert X.shape[0] == (U.shape[0] + 1)
@@ -70,8 +69,8 @@ def backward(spec: GLQRSpec, eps: float = 1e-8) -> lqr.Gains:
         return (S, s), (L, l, Ht)
 
     _, (L, l, D) = lax.scan(loop, (spec.Qf, spec.qf),
-                         (spec.Q, spec.q, spec.P, spec.R, spec.r, spec.A, spec.B, spec.V, spec.Cx, spec.Cu),
-                         reverse=True)
+                            (spec.Q, spec.q, spec.P, spec.R, spec.r, spec.A, spec.B, spec.V, spec.Cx, spec.Cu),
+                            reverse=True)
 
     return lqr.Gains(L=L, l=l, D=D)
 
