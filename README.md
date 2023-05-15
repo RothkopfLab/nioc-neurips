@@ -40,6 +40,7 @@ The package `nioc` contains implementations of
   - `navigation.py` navigation task
   - `classic_control.pendulum.py` classic inverted pendulum control problem
   - `classic_control.cartpole.py` classic cartpole control problem
+  - `lightdark.py` light-dark domain (Platt et al., 2010)
 
 - Environment wrappers `nioc.envs.wrappers`
     - `FullyObservedWrapper` turns a partially observed problem into a fully observed problem
@@ -48,4 +49,4 @@ The package `nioc` contains implementations of
 - Paramter inference algorithms `nioc.infer`
     - `inv_ilqr.py` inverse iterative (generalized) LQR (fully observable)
     - `inv_ilqg.py` inverse iterative (generalized) LQG (partially observable)
-    - `inv_maxent.py` maximum entropy IOC baseline (section 4.1)
+    - `inv_maxent.py` maximum entropy IOC baseline (Section 4.1)
