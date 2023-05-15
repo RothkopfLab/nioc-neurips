@@ -1,6 +1,6 @@
 # Non-linear inverse optimal control (nioc)
 
-This repository contains code for the NeurIPS submission "Probabilistic inverse optimal control with local linearization for partially-observable systems" (Anonymous Authors).
+This repository contains code for the NeurIPS submission "Probabilistic inverse optimal control for non-linear partially observable systems disentangles perceptual uncertainty and behavioral costs" (Anonymous Authors).
 
 ## Install requirements
 
