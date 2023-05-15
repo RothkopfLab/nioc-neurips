@@ -1,6 +1,6 @@
 # Non-linear inverse optimal control (nioc)
 
-This repository contains code for the ICML submission "Probabilistic inverse optimal control with local linearization for partially-observable systems" (Anonymous Authors).
+This repository contains code for the NeurIPS submission "Probabilistic inverse optimal control with local linearization for partially-observable systems" (Anonymous Authors).
 
 ## Install requirements
 
@@ -32,6 +32,7 @@ The package `nioc` contains implementations of
     - `ilqr` iterative LQR (Li & Todorov, 2004) 
     - `gilqr` generalized iterative LQR with signal-dependent noise, also known as iLQG (Li & Todorov, 2005) , equation numbers in code comments are from Li's PhD
       thesis (2006)
+    - `gilqg` generalized iterative LQG with signal-dependent noise, also known as iLQG (Todorov & Li, 2007), equation numbers in comments are from Li's PhD thesis (2007)
     - `ilqg_fixed` and `ilqr_fixed` compute one iteration of ilqg or ilqr given a fixed nominal trajectory (see Section 3.3 in the paper)
 
 - Environments `nioc.envs`
@@ -47,3 +48,4 @@ The package `nioc` contains implementations of
 - Paramter inference algorithms `nioc.infer`
     - `inv_ilqr.py` inverse iterative (generalized) LQR (fully observable)
     - `inv_ilqg.py` inverse iterative (generalized) LQG (partially observable)
+    - `inv_maxent.py` maximum entropy IOC baseline (section 4.1)
