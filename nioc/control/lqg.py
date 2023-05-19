@@ -1,55 +1,12 @@
-from jax import vmap, lax, random, jacobian, numpy as jnp
-from typing import NamedTuple, Tuple, Any, Callable
+from jax import lax, random, numpy as jnp
+from typing import Tuple
 
-from nioc.envs.base import Env
-from nioc.control import lqr
+from nioc.control import lqr, LQGSpec
 from nioc.belief import kf
 
 
-class LQGSpec(NamedTuple):
-    """Generalized LQG (with signal-dependent noise) specification"""
-
-    Q: jnp.ndarray
-    q: jnp.ndarray
-    Qf: jnp.array
-    qf: jnp.array
-    P: jnp.ndarray
-    R: jnp.ndarray
-    r: jnp.ndarray
-    A: jnp.ndarray
-    B: jnp.ndarray
-    H: jnp.ndarray
-    V: jnp.ndarray
-    W: jnp.ndarray
-
-
-def make_approx(p: Env, params: Any) -> Callable:
-    lqr_approx = lqr.make_approx(p, params)
-
-    @vmap
-    def approx_timestep(x, u):
-        # approximately linear observation
-        H = jacobian(p._observation, argnums=0)(x, jnp.zeros(p.obs_noise_shape), params)
-
-        # state-independent noise
-        V = jacobian(p._dynamics, argnums=2)(x, u, jnp.zeros(p.state_noise_shape), params)
-
-        # observation noise
-        W = jacobian(p._observation, argnums=1)(x, jnp.zeros(p.obs_noise_shape), params)
-
-        return H, V, W
-
-    def approx(X, U):
-        assert X.shape[0] == (U.shape[0] + 1)
-        H, V, W = approx_timestep(X[:-1], U)
-
-        return LQGSpec(*lqr_approx(X, U), V=V, H=H, W=W)
-
-    return approx
-
-
 def solve(spec: LQGSpec, Sigma0: jnp.ndarray, eps: float = 1e-8) -> Tuple[jnp.ndarray, lqr.Gains]:
-    K = kf.forward(kf.KFSpec(A=spec.A, H=spec.H, V=spec.V, W=spec.W), Sigma0=Sigma0)
+    K = kf.forward(spec=spec, Sigma0=Sigma0)
     control_gains = lqr.backward(spec=lqr.LQRSpec(Q=spec.Q, q=spec.q, Qf=spec.Qf, qf=spec.qf,
                                                   P=spec.P, R=spec.R, r=spec.r,
                                                   A=spec.A, B=spec.B), eps=eps)
@@ -83,7 +40,7 @@ def simulate(key: random.PRNGKey,
 
     T = spec.A.shape[0]
     xdim = spec.A.shape[1]
-    ydim = spec.H.shape[1]
+    ydim = spec.F.shape[1]
 
     key_system_noise, key_obs_noise = random.split(key, 2)
     state_noise = random.multivariate_normal(key_system_noise, jnp.zeros((xdim,)), jnp.eye(xdim),
@@ -94,19 +51,19 @@ def simulate(key: random.PRNGKey,
     def sim_iter(carry, step):
         x, xhat = carry
 
-        A, B, H, V, W, K, gain, eps_x, eps_y = step
+        A, B, F, V, W, K, gain, eps_x, eps_y = step
 
-        y = H @ x + W @ eps_y
+        y = F @ x + W @ eps_y
 
         xpred = A @ xhat + B @ (gain.L @ xhat + gain.l)
-        xhat = xpred + K @ (y - H @ xpred)
+        xhat = xpred + K @ (y - F @ xhat)
 
         u = gain.L @ xhat + gain.l
         x = A @ x + B @ u + V @ eps_x
 
         return (x, xhat), (x, u)
 
-    _, (X, U) = lax.scan(sim_iter, (x0, xhat0), (spec.A, spec.B, spec.H, spec.V, spec.W,
+    _, (X, U) = lax.scan(sim_iter, (x0, xhat0), (spec.A, spec.B, spec.F, spec.V, spec.W,
                                                  filter, gains, state_noise, obs_noise))
 
     return jnp.vstack([x0, X]), U

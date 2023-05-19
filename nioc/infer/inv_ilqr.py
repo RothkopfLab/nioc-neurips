@@ -6,11 +6,12 @@ from jax import vmap, jacobian
 from nioc.envs import Env
 from nioc.control import glqr, gilqr, ilqr, ilqr_fixed
 from nioc.control.policy import create_lqr_policy, create_maxent_lqr_policy
+from nioc.infer.base import InverseOptimalControl
 from nioc.infer.utils import estimate_controls
 
 
-class InverseILQR:
-    def __init__(self, env: Env, solve: Callable = ilqr.solve, maxent_temp: float = 0.):
+class InverseILQR(InverseOptimalControl):
+    def __init__(self, env: Env, solve: Callable = ilqr.solve, maxent_temp: float = 0., max_iter: int = 10):
         self.env = env
         self.solve = solve
         if maxent_temp > 0.:
@@ -18,6 +19,8 @@ class InverseILQR:
                                                                                     inv_temp=maxent_temp)
         else:
             self.create_policy = create_lqr_policy
+
+        self.max_iter = max_iter
 
     def moments(self, x, policy, params):
         def step(xt, t):
@@ -49,9 +52,11 @@ class InverseILQR:
     def apply_solver(self, x, params):
         T = x.shape[1] - 1
 
+        # TODO: x0 could be different for different trials. solver depends on x0. how do we want to deal with this?
+        #  right now, I am using the mean across trajectories
         gains, xbar, ubar = self.solve(self.env, x0=x[:, 0].mean(axis=0),
                                        U_init=jnp.zeros(shape=(T, self.env.action_shape[0])),
-                                       params=params, max_iter=5)
+                                       params=params, max_iter=self.max_iter)
         policy = self.create_policy(gains, xbar, ubar)
 
         return policy
@@ -68,13 +73,13 @@ class InverseILQR:
 
 
 class InverseGILQR(InverseILQR):
-    def __init__(self, env: Env, maxent_temp: float = 0.):
-        super().__init__(env, solve=gilqr.solve, maxent_temp=maxent_temp)
+    def __init__(self, env: Env, maxent_temp: float = 0., max_iter: int = 10):
+        super().__init__(env, solve=gilqr.solve, maxent_temp=maxent_temp, max_iter=max_iter)
 
 
 class FixedLinearizationInverseILQR(InverseILQR):
-    def __init__(self, env: Env, maxent_temp: float = 0.):
-        super().__init__(env, solve=ilqr_fixed.solve, maxent_temp=maxent_temp)
+    def __init__(self, env: Env, maxent_temp: float = 0., max_iter: int = 0):
+        super().__init__(env, solve=ilqr_fixed.solve, maxent_temp=maxent_temp, max_iter=max_iter)
 
     def apply_solver(self, x, params):
         # get policy for current params
@@ -92,8 +97,8 @@ class FixedLinearizationInverseILQR(InverseILQR):
 
 
 class FixedLinearizationInverseGILQR(FixedLinearizationInverseILQR):
-    def __init__(self, env: Env, maxent_temp: float = 0.):
-        super().__init__(env, maxent_temp=maxent_temp)
+    def __init__(self, env: Env, maxent_temp: float = 0., max_iter: int = 0):
+        super().__init__(env, maxent_temp=maxent_temp, max_iter=max_iter)
 
     def apply_solver(self, x, params):
         # get policy for current params

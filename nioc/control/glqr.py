@@ -1,52 +1,11 @@
-from jax import random, lax, vmap, jacobian, numpy as jnp
-from typing import Callable, Tuple, NamedTuple, Any
+from jax import random, lax, numpy as jnp
+from typing import Tuple
 
-from nioc import Env
-from nioc.control import lqr
+from nioc.control import lqr, LQGSpec
 from nioc.utils import quadratic_form, bilinear_form
 
 
-class GLQRSpec(NamedTuple):
-    """Generalized LQR (with signal-dependent noise) specification"""
-
-    Q: jnp.ndarray
-    q: jnp.ndarray
-    Qf: jnp.array
-    qf: jnp.array
-    P: jnp.ndarray
-    R: jnp.ndarray
-    r: jnp.ndarray
-    A: jnp.ndarray
-    B: jnp.ndarray
-    Cx: jnp.ndarray
-    Cu: jnp.ndarray
-    V: jnp.ndarray
-
-
-def make_approx(p: Env, params: Any) -> Callable:
-    lqr_approx = lqr.make_approx(p, params)
-
-    @vmap
-    def approx_noise(x, u):
-        # approximate dynamics noise
-        # state-independent noise
-        V = jacobian(p._dynamics, argnums=2)(x, u, jnp.zeros(p.state_noise_shape), params)
-        # state/action dependent noise
-        Cx, Cu = jacobian(jacobian(p._dynamics, argnums=2),
-                          argnums=(0, 1))(x, u, jnp.zeros(p.state_noise_shape), params)
-
-        return V, Cx, Cu
-
-    def approx(X, U):
-        assert X.shape[0] == (U.shape[0] + 1)
-        V, Cx, Cu = approx_noise(X[:-1], U)
-
-        return GLQRSpec(*lqr_approx(X, U), Cx=Cx, Cu=Cu, V=V)
-
-    return approx
-
-
-def backward(spec: GLQRSpec, eps: float = 1e-8) -> lqr.Gains:
+def backward(spec: LQGSpec, eps: float = 1e-8) -> lqr.Gains:
     def loop(carry, step):
         S, s = carry
 
@@ -63,20 +22,20 @@ def backward(spec: GLQRSpec, eps: float = 1e-8) -> lqr.Gains:
         L = -jnp.linalg.solve(Ht, G)
         l = -jnp.linalg.solve(Ht, g)
 
-        S = Q + A.T @ S @ A + L.T @ H @ L + L.T @ G + G.T @ L + quadratic_form(Cx, S).sum(axis=0)
-        s = q + A.T @ s + G.T @ l + L.T @ H @ l + L.T @ g + bilinear_form(Cx, S, V).sum(axis=0)
+        Sn = Q + A.T @ S @ A + L.T @ H @ L + L.T @ G + G.T @ L + quadratic_form(Cx, S).sum(axis=0)
+        sn = q + A.T @ s + G.T @ l + L.T @ H @ l + L.T @ g + bilinear_form(Cx, S, V).sum(axis=0)
 
-        return (S, s), (L, l, Ht)
+        return (Sn, sn), (L, l, Ht)
 
-    _, (L, l, D) = lax.scan(loop, (spec.Qf, spec.qf),
+    _, (L, l, H) = lax.scan(loop, (spec.Qf, spec.qf),
                             (spec.Q, spec.q, spec.P, spec.R, spec.r, spec.A, spec.B, spec.V, spec.Cx, spec.Cu),
                             reverse=True)
 
-    return lqr.Gains(L=L, l=l, D=D)
+    return lqr.Gains(L=L, l=l, H=H)
 
 
 def simulate(key: random.PRNGKey,
-             spec: GLQRSpec, x0: jnp.ndarray,
+             spec: LQGSpec, x0: jnp.ndarray,
              gains: lqr.Gains = None, eps: float = 1e-8) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Simulates noiseless forward dynamics"""
 

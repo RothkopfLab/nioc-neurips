@@ -8,6 +8,7 @@ class Belief(NamedTuple):
     Sigma: jnp.ndarray
 
 
-def stack_belief(xhat: jnp.ndarray, Sigma: jnp.ndarray) -> jnp.ndarray:
+def stack_belief(b: Belief) -> jnp.ndarray:
+    xhat, Sigma = b
     S = jnp.linalg.cholesky(Sigma)
     return jnp.hstack((xhat, S[jnp.tril_indices_from(S)]))

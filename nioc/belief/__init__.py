@@ -1,1 +1,1 @@
-from nioc.belief.utils import Belief
+from nioc.belief.utils import stack_belief, Belief

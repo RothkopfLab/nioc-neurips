@@ -6,7 +6,7 @@ from nioc.envs import NonlinearReaching
 from nioc.control import gilqr
 from nioc.control.policy import create_lqg_policy
 from nioc.envs.wrappers import EKFWrapper
-from nioc.infer import FixedLinearizationInverseGILQG, InverseMaxEntBaseline
+from nioc.infer import FixedLinearizationInverseGILQG, FixedInverseMaxEntBaseline
 from nioc.infer.utils import compute_mle
 
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     b0 = (x0, jnp.eye(x0.shape[0]))
 
     # setup random seed
-    key = random.PRNGKey(0)
+    key = random.PRNGKey(1)
 
     # simulate some trajectories given ground truth parameters
     key, subkey = random.split(key)
@@ -61,33 +61,31 @@ if __name__ == '__main__':
     # run maximization of the IOC likelihood
     print("Running inverse ILQG...")
     key, subkey = random.split(key)
-    result, result_params = compute_mle(xs, ioc, subkey, restarts=10,
-                                        bounds=env.get_params_bounds(), optim="L-BFGS-B")
-    result_params = NonlinearReachingParams(**result_params)
-    print(f"Estimated with inverse ILQG: {result_params}")
+    result = compute_mle(xs, ioc, subkey, restarts=10,
+                         bounds=env.get_params_bounds(), optim="L-BFGS-B")
+    print(f"Estimated with inverse ILQG: {result.params}")
 
     # simulate some trajectories given the maximum likelihood estimate parameters
     key, subkey = random.split(key)
-    xs_sim, pos_sim = simulate_trajectories(subkey, result_params)
+    xs_sim, pos_sim = simulate_trajectories(subkey, result.params)
 
     # plot trajectories simulated using MLE parameters
     ax.plot(pos_sim[..., 0].T, pos_sim[..., 1].T, color="C1", alpha=0.8, linewidth=1,
             label="Ours")
 
     # setup baseline method
-    baseline = InverseMaxEntBaseline(env)
+    baseline = FixedInverseMaxEntBaseline(env)
 
     # run maxent baseline
     print("Running MaxEnt baseline...")
     key, subkey = random.split(key)
-    baseline_result, baseline_params = compute_mle(xs, baseline, subkey, restarts=10,
-                                                   bounds=env.get_params_bounds(), optim="L-BFGS-B")
-    baseline_params = NonlinearReachingParams(**baseline_params)
-    print(f"Estimated with MaxEnt baseline: {baseline_params}")
+    baseline_result = compute_mle(xs, baseline, subkey, restarts=10,
+                                  bounds=env.get_params_bounds(), optim="L-BFGS-B")
+    print(f"Estimated with MaxEnt baseline: {baseline_result.params}")
 
     # simulate some trajectories given the parameters estimated using the maxent baseline
     key, subkey = random.split(key)
-    xs_baseline, pos_baseline = simulate_trajectories(subkey, baseline_params)
+    xs_baseline, pos_baseline = simulate_trajectories(subkey, baseline_result.params)
 
     # plot trajectories simulated using MLE parameters
     ax.plot(pos_baseline[..., 0].T, pos_baseline[..., 1].T, color="C2", alpha=0.8, linewidth=1,

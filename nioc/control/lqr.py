@@ -1,9 +1,8 @@
-from typing import Callable, Tuple, NamedTuple, Any
+from typing import Tuple, NamedTuple
 import jax.numpy as jnp
-from jax import vmap, jacfwd, grad, jacobian
 from jax import lax
 
-from nioc import Env
+from nioc.control.spec import LQRSpec
 
 
 class Gains(NamedTuple):
@@ -11,47 +10,7 @@ class Gains(NamedTuple):
 
     L: jnp.ndarray
     l: jnp.ndarray
-    D: jnp.ndarray = None
-
-
-class LQRSpec(NamedTuple):
-    """LQR specification"""
-
-    Q: jnp.ndarray
-    q: jnp.ndarray
-    Qf: jnp.array
-    qf: jnp.array
-    P: jnp.ndarray
-    R: jnp.ndarray
-    r: jnp.ndarray
-    A: jnp.ndarray
-    B: jnp.ndarray
-
-
-def make_approx(p: Env, params: Any) -> Callable:
-    @vmap
-    def approx_timestep(x, u):
-        # quadratic approximation of cost function
-        P = jacfwd(grad(p._cost, argnums=1), argnums=0)(x, u, params)
-        Q = jacfwd(grad(p._cost, argnums=0), argnums=0)(x, u, params)
-        R = jacfwd(grad(p._cost, argnums=1), argnums=1)(x, u, params)
-        q, r = grad(p._cost, argnums=(0, 1))(x, u, params)
-
-        # linear approximation of dynamics
-        A, B = jacobian(p._dynamics, argnums=(0, 1))(x, u, jnp.zeros(p.state_noise_shape), params)
-        return Q, q, P, R, r, A, B
-
-    def approx(X, U):
-        assert X.shape[0] == (U.shape[0] + 1)
-        Q, q, P, R, r, A, B = approx_timestep(X[:-1], U)
-
-        # quadratic approximation of the final time step costs
-        Qf = jacfwd(grad(p._final_cost, argnums=0), argnums=0)(X[-1], params)
-        qf = grad(p._final_cost, argnums=0)(X[-1], params)
-
-        return LQRSpec(Q=Q, q=q, Qf=Qf, qf=qf, P=P, R=R, r=r, A=A, B=B)
-
-    return approx
+    H: jnp.ndarray = None
 
 
 def backward(spec: LQRSpec, eps: float = 1e-8) -> Gains:
@@ -76,11 +35,11 @@ def backward(spec: LQRSpec, eps: float = 1e-8) -> Gains:
 
         return (S, s), (L, l, Ht)
 
-    _, (L, l, D) = lax.scan(loop, (spec.Qf, spec.qf),
+    _, (L, l, H) = lax.scan(loop, (spec.Qf, spec.qf),
                             (spec.Q, spec.q, spec.P, spec.R, spec.r, spec.A, spec.B),
                             reverse=True)
 
-    return Gains(L=L, l=l, D=D)
+    return Gains(L=L, l=l, H=H)
 
 
 def simulate(key,

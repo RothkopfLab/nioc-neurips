@@ -2,27 +2,48 @@ from typing import Callable, Any, Tuple
 import jax.numpy as jnp
 from jax import vmap, jacobian, lax, scipy as js
 
+from nioc.infer.base import InverseOptimalControl
 from nioc.envs import Env
-from nioc.belief import kf, Belief
-from nioc.control import ilqr, gilqr, ilqg_fixed, glqg, lqg
+from nioc.belief import Belief, kf
+from nioc.control import ilqr, ilqg_fixed, glqg, make_lqg_approx
 from nioc.control.policy import create_lqr_policy, create_maxent_lqr_policy
 from nioc.infer.utils import estimate_controls
 
 
-class InverseILQG:
-    def __init__(self, env: Env, b0: Belief, solve: Callable = ilqr.solve, maxent_temp: float = 0.):
+def create_joint_dynamics(p: Env, K: jnp.ndarray) -> Callable:
+    f = p._dynamics
+    h = p._observation
+
+    def joint_dynamics(t, x, xhat, state_noise, obs_noise, policy_noise, policy, params):
+        u = policy(t, xhat, policy_noise)
+        x_next = f(x, u, state_noise, params)
+        xhat_next = f(xhat, u, jnp.zeros_like(state_noise), params) + K[t] @ (
+                h(x, obs_noise, params) - h(xhat, jnp.zeros_like(obs_noise), params))
+
+        return jnp.hstack((x_next, xhat_next))
+
+    return joint_dynamics
+
+
+class InverseILQG(InverseOptimalControl):
+    def __init__(self, env: Env, b0: Belief, solve: Callable = ilqr.solve, kf=kf, maxent_temp: float = 0.,
+                 max_iter: int = 10):
         self.env = env
         self.solve = solve
+        self.kf = kf
 
-        self.b0, self.Sigma0 = b0
+        self.x0, self.Sigma0 = b0
+        self.b0 = self.x0
 
-        self.xdim = self.b0.shape[0]
+        self.xdim = self.x0.shape[0]
         self.bdim = self.xdim
 
         if maxent_temp > 0:
             self.create_policy = lambda gains, xbar, ubar: create_maxent_lqr_policy(gains, xbar, ubar, maxent_temp)
         else:
             self.create_policy = create_lqr_policy
+
+        self.max_iter = max_iter
 
     def moments(self, x: jnp.ndarray, joint_dynamics: Callable,
                 policy: Callable, params: Any) -> Tuple[jnp.ndarray, jnp.ndarray]:
@@ -75,42 +96,24 @@ class InverseILQG:
     def apply_solver(self, x: jnp.ndarray, params: Any) -> Tuple[Callable, Callable]:
         T = x.shape[1] - 1
 
-        gains, xbar, ubar = self.solve(p=self.env, x0=self.b0,
+        # TODO: x0 could be different for different trials. solver depends on x0. how do we want to deal with this?
+        #  right now, I am using the mean of the initial belief
+        gains, xbar, ubar = self.solve(p=self.env, x0=self.x0, Sigma0=self.Sigma0,
                                        U_init=jnp.zeros(shape=(T, self.env.action_shape[0])),
-                                       params=params, max_iter=25)
+                                       params=params, max_iter=self.max_iter)
         policy = self.create_policy(gains, xbar, ubar)
 
-        lqgspec = lqg.make_approx(p=self.env, params=params)(xbar, ubar)
-        K = kf.forward(kf.KFSpec(A=lqgspec.A, H=lqgspec.H, V=lqgspec.V, W=lqgspec.W), Sigma0=self.Sigma0)
+        lqgspec = make_lqg_approx(p=self.env, params=params)(xbar, ubar)
+        K = self.kf.forward(spec=lqgspec, gains=gains, xhat0=self.x0, Sigma0=self.Sigma0)
 
         joint_dynamics = create_joint_dynamics(self.env, K)
 
         return policy, joint_dynamics
 
 
-class InverseGILQG(InverseILQG):
-    def __init__(self, env: Env, b0: Belief, maxent_temp: float = 0.):
-        super().__init__(env, b0, solve=gilqr.solve, maxent_temp=maxent_temp)
-
-
-def create_joint_dynamics(p: Env, K: jnp.ndarray) -> Callable:
-    f = p._dynamics
-    h = p._observation
-
-    def joint_dynamics(t, x, xhat, state_noise, obs_noise, policy_noise, policy, params):
-        u = policy(t, xhat, policy_noise)
-        x_next = f(x, u, state_noise, params)
-        xhat_next = f(xhat, u, jnp.zeros_like(state_noise), params) + K[t] @ (
-                h(x, obs_noise, params) - h(xhat, jnp.zeros_like(obs_noise), params))
-
-        return jnp.hstack((x_next, xhat_next))
-
-    return joint_dynamics
-
-
 class FixedLinearizationInverseILQG(InverseILQG):
-    def __init__(self, env: Env, b0: Belief, maxent_temp: float = 0.):
-        super().__init__(env, b0, solve=ilqg_fixed.solve, maxent_temp=0.)
+    def __init__(self, env: Env, b0: Belief, maxent_temp: float = 0., max_iter: int = 0):
+        super().__init__(env, b0, solve=ilqg_fixed.solve, maxent_temp=0., max_iter=max_iter)
 
         if maxent_temp > 0:
             self.create_policy = lambda gains, xbar, ubar: create_maxent_lqr_policy(gains, xbar, ubar, maxent_temp)
@@ -136,8 +139,8 @@ class FixedLinearizationInverseILQG(InverseILQG):
 
 
 class FixedLinearizationInverseGILQG(FixedLinearizationInverseILQG):
-    def __init__(self, env: Env, b0: Belief, maxent_temp: float = 0.):
-        super().__init__(env, b0, maxent_temp=maxent_temp)
+    def __init__(self, env: Env, b0: Belief, maxent_temp: float = 0., max_iter: int = 0):
+        super().__init__(env, b0, maxent_temp=maxent_temp, max_iter=max_iter)
 
     def apply_solver(self, x: jnp.ndarray, params: Any) -> Tuple[Callable, Callable]:
         # get policy for current params
