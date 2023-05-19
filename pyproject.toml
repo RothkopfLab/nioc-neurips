@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nioc"
+dynamic = ["version"]
+description = "Non-linear inverse optimal control."
+readme = "README.md"
+license = { file = "LICENSE" }
+dependencies = [
+    "jax >= 0.4.3",
+    "jaxlib >= 0.4.3",
+    "jaxopt >= 0.5.5",
+    "numpyro >= 0.11.0",
+    "matplotlib >= 3.6.0",
+    "arviz >= 0.13.0"
+]
+requires-python = ">=3.8"
+
+[tool.setuptools]
+packages = ["nioc"]

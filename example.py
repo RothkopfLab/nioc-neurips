@@ -59,6 +59,7 @@ if __name__ == '__main__':
     ioc = FixedLinearizationInverseGILQG(env, b0=b0)
 
     # run maximization of the IOC likelihood
+    print("Running inverse ILQG...")
     key, subkey = random.split(key)
     result, result_params = compute_mle(xs, ioc, subkey, restarts=10,
                                         bounds=env.get_params_bounds(), optim="L-BFGS-B")
@@ -77,6 +78,7 @@ if __name__ == '__main__':
     baseline = InverseMaxEntBaseline(env)
 
     # run maxent baseline
+    print("Running MaxEnt baseline...")
     key, subkey = random.split(key)
     baseline_result, baseline_params = compute_mle(xs, baseline, subkey, restarts=10,
                                                    bounds=env.get_params_bounds(), optim="L-BFGS-B")

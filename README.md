@@ -9,7 +9,7 @@ The easiest way is to create a fresh virtual environment and install everything 
 ```bash
 python -m venv env
 source env/bin/activate
-python -m pip install -r requirements.txt
+python -m pip -e .
 ```
 
 ## Running the example script
