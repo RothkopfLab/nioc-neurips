@@ -16,7 +16,7 @@ python -m pip install -e .
 
 
 ```bash
-python reaching_example.py
+python example.py
 ```
 
 runs an example that simulates trajectories from the reaching task, estimates the parameters using our method and the baseline, and plots simulated trajectories using the parameter estimates.
