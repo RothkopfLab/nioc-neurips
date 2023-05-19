@@ -21,6 +21,10 @@ python reaching_example.py
 
 runs an example that simulates trajectories from the reaching task, estimates the parameters using our method and the baseline, and plots simulated trajectories using the parameter estimates.
 
+## Reproducing figures
+
+- Figure 2 (trajectories and log likelihood): `fig2-likelihood.py`
+- Figure 4 (light-dark domain): `fig4-infoseeking.py`
 
 ## Package `nioc`
 The package `nioc` contains implementations of 
