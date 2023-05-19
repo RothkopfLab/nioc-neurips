@@ -41,7 +41,6 @@ def compute_mle(xs, ioc, key, restarts, bounds, optim="L-BFGS-B",
 
     # minimizer for negative log likelihood, do optimization in log space
     # nll = lambda params: -ioc.loglikelihood(xs, {name: 10. ** val for name, val in params._asdict().items()})
-    # TODO: does this actually use the default value of the unused params?
     nll = lambda params: -ioc.loglikelihood(xs,
                                             ParamsType(**jax.tree_map(lambda x: 10 ** x, params)),
                                             **likelihood_params)

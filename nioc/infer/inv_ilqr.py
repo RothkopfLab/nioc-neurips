@@ -52,8 +52,6 @@ class InverseILQR(InverseOptimalControl):
     def apply_solver(self, x, params):
         T = x.shape[1] - 1
 
-        # TODO: x0 could be different for different trials. solver depends on x0. how do we want to deal with this?
-        #  right now, I am using the mean across trajectories
         gains, xbar, ubar = self.solve(self.env, x0=x[:, 0].mean(axis=0),
                                        U_init=jnp.zeros(shape=(T, self.env.action_shape[0])),
                                        params=params, max_iter=self.max_iter)

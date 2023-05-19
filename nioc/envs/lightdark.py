@@ -60,7 +60,7 @@ class LightDark(Env):
 
 if __name__ == '__main__':
 
-    from jax import random, vmap
+    from jax import random
     import matplotlib.pyplot as plt
 
     from nioc.envs.wrappers import EKFWrapper

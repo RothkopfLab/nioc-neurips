@@ -96,8 +96,6 @@ class InverseILQG(InverseOptimalControl):
     def apply_solver(self, x: jnp.ndarray, params: Any) -> Tuple[Callable, Callable]:
         T = x.shape[1] - 1
 
-        # TODO: x0 could be different for different trials. solver depends on x0. how do we want to deal with this?
-        #  right now, I am using the mean of the initial belief
         gains, xbar, ubar = self.solve(p=self.env, x0=self.x0, Sigma0=self.Sigma0,
                                        U_init=jnp.zeros(shape=(T, self.env.action_shape[0])),
                                        params=params, max_iter=self.max_iter)
