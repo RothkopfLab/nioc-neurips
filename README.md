@@ -4,7 +4,7 @@ This repository contains code for the NeurIPS submission "Probabilistic inverse 
 
 ## Install requirements
 
-The easiest way is to create a fresh virtual environment and install everything from `requirements.txt`.
+The easiest way is to create a fresh virtual environment and install the `nioc` package using pip:
 
 ```bash
 python -m venv env
