@@ -9,7 +9,7 @@ The easiest way is to create a fresh virtual environment and install the `nioc` 
 ```bash
 python -m venv env
 source env/bin/activate
-python -m pip -e .
+python -m pip install -e .
 ```
 
 ## Running the example script
