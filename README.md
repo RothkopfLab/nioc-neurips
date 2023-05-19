@@ -23,8 +23,8 @@ runs an example that simulates trajectories from the reaching task, estimates th
 
 ## Reproducing figures
 
-- Figure 2 (trajectories and log likelihood): `fig2-likelihood.py`
-- Figure 4 (light-dark domain): `fig4-infoseeking.py`
+- Figure 2 (trajectories and log likelihood): `fig2_likelihood.py`
+- Figure 4 (light-dark domain): `fig4_infoseeking.py`
 
 ## Package `nioc`
 The package `nioc` contains implementations of 
