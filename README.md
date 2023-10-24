@@ -34,9 +34,9 @@ The package `nioc` contains implementations of
     - `lqg` linear quadratic Gaussian (LQG) control
     - `glqg` generalized LQG with signal-dependent noise (Todorov, 2005)
     - `ilqr` iterative LQR (Li & Todorov, 2004) 
-    - `gilqr` generalized iterative LQR with signal-dependent noise, also known as iLQG (Li & Todorov, 2005) , equation numbers in code comments are from Li's PhD
+    - `gilqr` generalized iterative LQR with signal-dependent noise, also known as fully observable iLQG (Li & Todorov, 2005) , equation numbers in code comments are from Li's PhD
       thesis (2006)
-    - `gilqg` generalized iterative LQG with signal-dependent noise, also known as iLQG (Todorov & Li, 2007), equation numbers in comments are from Li's PhD thesis (2007)
+    - `gilqg` generalized iterative LQG with signal-dependent noise, also known as partially observable iLQG (Todorov & Li, 2007), equation numbers in comments are from Li's PhD thesis (2007)
     - `ilqg_fixed` and `ilqr_fixed` compute one iteration of ilqg or ilqr given a fixed nominal trajectory (see Section 3.3 in the paper)
 
 - Environments `nioc.envs`
