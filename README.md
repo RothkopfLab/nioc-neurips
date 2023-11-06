@@ -1,6 +1,6 @@
 # Non-linear inverse optimal control (nioc)
 
-This repository contains code for the NeurIPS 2023 paper "Probabilistic inverse optimal control for non-linear partially observable systems disentangles perceptual uncertainty and behavioral costs" (Straub, Schultheis, Koeppl, Rothkopf).
+This repository contains code for the NeurIPS 2023 paper ["Probabilistic inverse optimal control for non-linear partially observable systems disentangles perceptual uncertainty and behavioral costs"](https://arxiv.org/abs/2303.16698) (Straub, Schultheis, Koeppl, Rothkopf).
 
 ## Install requirements
 
